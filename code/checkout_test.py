@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import Mock
 from checkout import Checkout
 
-class TestPricingRules(unittest.TestCase):
+class TestCheckout(unittest.TestCase):
     '''
     Unit tests for checkout module
     '''
