@@ -28,17 +28,84 @@ Successfully tagged shopping-cart:latest
 
 # How to run unit tests
 
-Using the image you've just build, eecute unit tests:
+Using the image you've just build, execute unit tests:
 
 ```bash
-$ docker run -it --rm --name shopping-cart shopping-cart python3 checkout_test.py -v
-test_constructor (__main__.TestPricingRules) ... ok
-test_scan_quantity_increments (__main__.TestPricingRules) ... ok
-test_scan_throws_exception (__main__.TestPricingRules) ... ok
-test_total_no_discount (__main__.TestPricingRules) ... ok
+$ docker run -it --rm --name shopping-cart shopping-cart python3 -m unittest discover -s tests -p '*_test.py' -v
+test_constructor (checkout_test.TestCheckout) ... ok
+test_scan_quantity_increments (checkout_test.TestCheckout) ... ok
+test_scan_throws_exception (checkout_test.TestCheckout) ... ok
+test_total_no_discount (checkout_test.TestCheckout) ... ok
+test_discount_every_third_apple_tv_bought_3 (pricingrules_test.TestPricingRules) ... ok
+test_discount_every_third_apple_tv_bought_4 (pricingrules_test.TestPricingRules) ... ok
+test_discount_every_third_apple_tv_bought_5 (pricingrules_test.TestPricingRules) ... ok
+test_discount_every_third_apple_tv_bought_7 (pricingrules_test.TestPricingRules) ... ok
 
 ----------------------------------------------------------------------
-Ran 4 tests in 0.001s
+Ran 8 tests in 0.057s
 
 OK
 ```
+
+# How to use this code
+
+## Sales Manager sets prices and pricing rules
+
+This is done by editing YAML files inside ./config directory.
+
+NOTE! Don't modify `.yaml` files inside `/code/tests/config/catalog.yaml`. Because they are used as unit tests fixtures and unit tests will be broken if you change them.
+
+### File `/code/config/catalog.yaml`
+
+This files represents a set of Products
+
+```yaml
+---
+kind: Product
+sku: ipd
+name: Super iPad
+price: 549.99
+```
+
+You can multiply and copy-paste these Product blocks as long as you keep SKUs unique.
+
+You can set values of sku, name, price to whatever you want.
+
+NOTE! negative prices have not been tested!
+
+### File `/code/config/pricingrules.yaml`
+
+This file represents a set of PricingRules.
+
+```yaml
+---
+kind: PricingRule
+name: get-three-apple-tv-for-price-of-two
+description: we are going to have a 3 for 2 deal on Apple TVs. For example, if you buy 3 Apple TVs, you will pay the price of 2 only
+func:
+  name: discount_every_third
+  params:
+    appliedToSku: atv
+```
+
+You can copy-paste these PricingRule blocks.
+All func names which you use in pricingrules.yaml must be implemented in PricingRule python class.
+
+That leads to a workflow:
+
+- Sales Manager drafts/models the pricing rule in YAML.
+- Then Developer can pick up the YAML file and implement corresponding function in PricingRule python class.
+
+In the YAML it is:
+- possible to specify function name and parameters required for the logic of this pricing rule.
+- parameter `appliedToSku` is mandatory.
+- for any given `appliedToSku` parameter there can be only one PricingRule in the whole YAML.
+
+## Developer implements new pricing rule
+
+See example implementation and documentation for `PricingRules.discount_every_third()` and `Checkout.total()` functions.
+
+
+# Example script
+
+See `run.py`
