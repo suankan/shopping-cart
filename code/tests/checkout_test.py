@@ -3,59 +3,27 @@ Unit tests for checkout module
 '''
 
 import unittest
-from unittest.mock import Mock
+import sys
+sys.path.append('/code')
 from checkout import Checkout
+from pricingrules import PricingRules
+
 
 class TestCheckout(unittest.TestCase):
     '''
     Unit tests for checkout module
     '''
 
-    def mock_pricingrules_and_catalog(self):
+    def init_pricingrules(self):
         '''
-        Mock prerequisites for Checkout class and create Checkout object
-
-        Execute this before each unit test.
-
-        According to spec, Checkout class should be initialised by pricing_rules object.
-        We will plan implementation of pricing_rules object so that it will know
-        about catalog and discounts (pricing rules).
-
+        This function initialises PricingRules, Checkout objects from real files
         TODO: turn it into decorator.
         '''
 
-        # We will have to mock pricing_rules to test the exception
-        self.pricing_rules = Mock()
-
-        # Mock the catalog as dict
-        self.pricing_rules.catalog = {
-            'atv': {
-                'kind': 'Product',
-                'name': 'Apple TV',
-                'price': 109.5,
-                'sku': 'atv'
-            },
-            'ipd': {
-                'kind': 'Product',
-                'name': 'Super iPad',
-                'price': 549.99,
-                'sku': 'ipd'
-            },
-            'mbp': {
-                'kind': 'Product',
-                'name': 'MacBook Pro',
-                'price': 1399.99,
-                'sku': 'mbp'
-            },
-            'vga': {
-                'kind': 'Product',
-                'name': 'VGA adapter',
-                'price': 30.0,
-                'sku': 'vga'
-            }
-        }
-
+        self.pricing_rules = PricingRules('/code/tests/config/catalog.yaml',
+            '/code/tests/config/pricingrules.yaml')
         self.checkout = Checkout(self.pricing_rules)
+
 
     def teardown_pricingrules_and_catalog(self):
         '''
@@ -72,14 +40,14 @@ class TestCheckout(unittest.TestCase):
         Testing constructor
         '''
 
-        self.mock_pricingrules_and_catalog()
+        self.init_pricingrules()
 
         # Make sure selected_items is an empty dict
         self.assertEqual(self.checkout.selected_items, {})
         # Make sure we have set zero total_sum
         self.assertEqual(self.checkout.total_sum, 0)
         # Make sure that pricing_rules is set to the mocked PricingRules object
-        self.assertEqual(True, isinstance(self.checkout.pricing_rules, Mock))
+        self.assertEqual(True, isinstance(self.checkout.pricing_rules, PricingRules))
 
         self.teardown_pricingrules_and_catalog()
 
@@ -88,7 +56,7 @@ class TestCheckout(unittest.TestCase):
         Test that scan() throws exception if someone scans SKU which is not in catalog
         '''
 
-        self.mock_pricingrules_and_catalog()
+        self.init_pricingrules()
 
         with self.assertRaises(Exception):
             self.checkout.scan('no-such-SKU')
@@ -100,15 +68,15 @@ class TestCheckout(unittest.TestCase):
         Make sure that quantity is set to 1 if Apple TV SKU is scanned first time.
         Make sure that quantity is incremented if Apple TV SKU is scanned second time.
         '''
-        self.mock_pricingrules_and_catalog()
+        self.init_pricingrules()
 
         # First scan
         self.checkout.scan('atv')
-        self.assertEqual(1, self.checkout.selected_items['atv'])
+        self.assertEqual(1, self.checkout.selected_items['atv']['quantity'])
 
         # Second scan
         self.checkout.scan('atv')
-        self.assertEqual(2, self.checkout.selected_items['atv'])
+        self.assertEqual(2, self.checkout.selected_items['atv']['quantity'])
 
         self.teardown_pricingrules_and_catalog()
 
@@ -117,14 +85,14 @@ class TestCheckout(unittest.TestCase):
         SKUs Scanned: atv, atv, atv, vga Total expected: 358.5 (no discounts)
         '''
 
-        self.mock_pricingrules_and_catalog()
+        self.init_pricingrules()
 
         for sku in ['atv', 'atv', 'atv', 'vga']:
             self.checkout.scan(sku)
 
         actual = self.checkout.total()
-        # expected = float(249.00)
-        expected = float(358.5)
+        expected = float(249.00)
+        # expected = float(358.5)
 
         self.assertEqual(actual, expected)
 

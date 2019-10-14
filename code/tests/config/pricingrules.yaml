@@ -1,0 +1,26 @@
+---
+kind: PricingRule
+name: get-three-apple-tv-for-price-of-two
+description: we are going to have a 3 for 2 deal on Apple TVs. For example, if you buy 3 Apple TVs, you will pay the price of 2 only
+func:
+  name: discount_every_third
+  params:
+    appliedToSku: atv
+---
+kind: PricingRule
+name: super-ipad-new-price-if-more-than-four
+description: the brand new Super iPad will have a bulk discounted applied, where the price will drop to $499.99 each, if someone buys more than 4
+func:
+  name: _ipd_new_price_if_more_than_four
+  params:
+    appliedToSku: ipd
+    newPrice: 499.99
+---
+kind: PricingRule
+name: bundle-macbook-with-vga
+description: we will bundle in a free VGA adapter free of charge with every MacBook Pro sold
+func:
+  name: _bundle_macbook_with
+  params:
+    appliedToSku: mbp
+    withProduct: vga
